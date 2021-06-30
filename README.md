@@ -1,23 +1,25 @@
 # RuuviTag Sensor Listener for Home Assistant #
-## Add RuuviTags to Home Assistant
+## Add [RuuviTag](https://ruuvi.com/ruuvitag/) Enviromental Sensors to Home Assistant
 
 ****
 
 ## What the project does ##
-My quick & dirty implementation using ruuvitag_sensor library to write measurements from RuuviTags to json file, so Home Assistant can read them as a file sensor.
-1. Listens for RuuviTags with whitelistet MAC-addresses
-2. Writes the measurements in json file
-3. Home Assistant reads the file and handles it as sensor data
-4. If sensor is out of range or out of battery, previous known value will be used (no false-zero readings in Home Assistant)
+My quick & dirty implementation using ruuvitag_sensor library to write measurements from RuuviTags into a json file, for Home Assistant to read them as a [file sensor](https://www.home-assistant.io/integrations/file/#sensor).
+
+1. Listens for RuuviTags with whitelisted MAC-addresses
+2. Writes the measurements down in a json file
+3. The Home Assistant reads the file, and handles it as sensor data
+4. If the sensor is out of range, or out of battery, previous known value will be used. (No false-zero readings in Home Assistant)
 
 ## Why the project is useful ##
-Sample code for others to learn how the library can be used. Working code can also be used with Home Assistant.
+
+Provided as a sample code for others, to learn how the library can be used. Code should be working and used as is to connect RuuviTags to Home Assistant.
 Tested on Rapsberry Pi 4 8GB and Python 2.7.16
 
 ## How users can get started with the project ##
 
-- Automatic configuration.yaml generation, so you don't have to type a lot of sensors
-- Automatic customization.yaml generation, for icons & sensor classes
+- Automatic configuration.yaml generation, so you don't have to type a lot of complicated config lines.
+- Automatic customize.yaml generation, for icons & sensor classes for the tags.
 
 ### 1. Files should be installed to:
 **/custom-components/ruuvitag-listener** folder in your home assistant config directory.
@@ -31,8 +33,9 @@ For example:
 |----|-----|
 |measure.py|Does the measuring and config file generation. Run this with crontab (without parameters)!|
 |sensor_list.json|List of your RuuviTags, used to ignore neighbour's sensors and generating the configs.|
+|sensor_list.sample.json|Sample of sensorlist. Add your tags and remove the ".sample" from filename.|
 |configuration.txt|Contains rows to be added to configuration.yaml. Tells Home Assistant how to read the sensor file.|
-|customization.txt|Contains rows to be added to customization.yaml. Sensor icons, device classes etc.|
+|customization.txt|Contains rows to be added to customize.yaml. Sensor icons, device classes etc.|
 
 ### 2. Install _ruuvitag-sensor_ library
 Library does all the heavy lifting with bluetooth handling and whatnot.
@@ -97,7 +100,7 @@ Copy the generated configurations to Home Assistant's config files.
 
 ```txt
 configuration.txt --> configuration.yaml
-customization.txt --> customization.yaml
+customization.txt --> customize.yaml
 ```
 
 You might need to whitelist the component directory and add the customization file to the configuration.yaml file:
@@ -115,6 +118,7 @@ Code is supplied as is, you are on your own.
 
 ## Who maintains and contributes to the project ##
 [Nerdaxic](https://github.com/Nerdaxic), whenever I feel like it. Don't hold your breath for updates but feel free to fork!
+
 Free for non-commercial use.
 
 If this helped you in a meaningful way, you can get me coffee through [PayPal](https://www.paypal.me/nerdaxic).

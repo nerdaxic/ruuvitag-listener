@@ -1,28 +1,26 @@
 # RuuviTag Sensor Listener for Home Assistant #
 ## Add [RuuviTag](https://ruuvi.com/ruuvitag/) Enviromental Sensors to Home Assistant
 
-****
 
 ## What the project does ##
-My quick & dirty implementation using ruuvitag_sensor library to write measurements from RuuviTags into a json file, for Home Assistant to read them as a [file sensor](https://www.home-assistant.io/integrations/file/#sensor).
+My implementation using [ruuvitag_sensor](https://pypi.org/project/ruuvitag-sensor/) library to write measurements from RuuviTags into a .json file, for Home Assistant to read them as a [file sensor](https://www.home-assistant.io/integrations/file/#sensor) every few minutes.
 
-1. Listens for RuuviTags with whitelisted MAC-addresses
-2. Writes the measurements down in a json file
-3. The Home Assistant reads the file, and handles it as sensor data
-4. If the sensor is out of range, or out of battery, previous known value will be used. (No false-zero readings in Home Assistant)
-
+1. Listens for RuuviTags around with whitelisted MAC-addresses.
+2. Writes the measurements down in a .json file.
+3. The Home Assistant reads the file, and handles it as sensor data.
+4. If the sensor is out of range, or out of battery, previous known value will be used. No false-zero readings in Home Assistant.
 
 ![RuuviTag](https://pbs.twimg.com/media/E3l5l_BXIAEskmq?format=jpg&name=large)
 
 ## Why the project is useful ##
 
 Provided as a sample code for others, to learn how the library can be used. Code should be working and used as is to connect RuuviTags to Home Assistant.
-Tested on Rapsberry Pi 4 8GB and Python 2.7.16
-
-## How users can get started with the project ##
+Tested on Rapsberry Pi 4 8GB and Python 2.7.16.
 
 - Automatic configuration.yaml generation, so you don't have to type a lot of complicated config lines.
-- Automatic customize.yaml generation, for icons & sensor classes for the tags.
+- Automatic customize.yaml generation, for icons & sensor classes for the RuuviTags.
+
+## How users can get started with the project ##
 
 ### 1. Files should be installed to:
 **/custom-components/ruuvitag-listener** folder in your home assistant config directory.
@@ -36,9 +34,12 @@ For example:
 |----|-----|
 |measure.py|Does the measuring and config file generation. Run this with crontab (without parameters)!|
 |sensor_list.json|List of your RuuviTags, used to ignore neighbour's sensors and generating the configs.|
-|sensor_list.sample.json|Sample of sensorlist. Add your tags and remove the ".sample" from filename.|
-|configuration.txt|Contains rows to be added to configuration.yaml. Tells Home Assistant how to read the sensor file.|
-|customization.txt|Contains rows to be added to customize.yaml. Sensor icons, device classes etc.|
+|sensor_list.sample.json|Sample of sensor list. Add your tags and remove the ".sample" from filename.|
+|configuration.txt¹|Contains rows to be added to configuration.yaml. Tells Home Assistant how to read the sensor file.|
+|customization.txt¹|Contains rows to be added to customize.yaml. Sensor icons, device classes etc.|
+|.gitignore|Lists the files containing identifiable information, please don't push these into GIT.|
+
+_¹Created in step 6._
 
 ### 2. Install _ruuvitag-sensor_ library
 Library does all the heavy lifting with bluetooth handling and whatnot.
@@ -65,7 +66,7 @@ You can find your MAC-addresses using RuuviStation mobile app or using _ruuvitag
 ```
 
 ### 5. Refresh data automatically with cron
-Add line to crontab to refresh data every 5 minutes.
+Add line to crontab to refresh data every 5 minutes. This is done outside the Home Assistant's docker container, container just has access to the resulting measurements.json file. Should work fine with the default "pi" user.
 **Edit crontab:**
 ```bash
 crontab -e
@@ -108,7 +109,7 @@ configuration.txt --> configuration.yaml
 customization.txt --> customize.yaml
 ```
 
-You might need to whitelist the component directory and add the customization file to the configuration.yaml file:
+You might need to add the customize.yaml into the configuration.yaml file, and possibly to whitelist the custom-component folder (which I doubt):
 ```yaml
 homeassistant:
   customize: !include customize.yaml

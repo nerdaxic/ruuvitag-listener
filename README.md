@@ -56,7 +56,7 @@ sudo apt-get install bluez bluez-hcidump
 ### 4. Add your sensors to the sensor_list.json file like so:
 Rename **sensor_list.sample.json** file to **sensor_list.json** and add your tags names and MAC-adresses.
 
-I recommend to use simple, single-word english names for the config file generation to work and easier management. You can rename these in Home Assistant customizer to your native language.
+I recommend to use simple, English names for the config file generation to fly apart, and easier management. You can rename the sensors in Home Assistant customizer into your native language. For example: Naming the tag "Living room" here will show up as "sensor.living_room_temperature" Home Assistant entity.
 
 You can find your MAC-addresses using RuuviStation mobile app or using _ruuvitag-sensor_ library [sample code](https://pypi.org/project/ruuvitag-sensor/). 
 ```json

@@ -11,6 +11,9 @@ My quick & dirty implementation using ruuvitag_sensor library to write measureme
 3. The Home Assistant reads the file, and handles it as sensor data
 4. If the sensor is out of range, or out of battery, previous known value will be used. (No false-zero readings in Home Assistant)
 
+
+![RuuviTag](https://pbs.twimg.com/media/E3l5l_BXIAEskmq?format=jpg&name=large)
+
 ## Why the project is useful ##
 
 Provided as a sample code for others, to learn how the library can be used. Code should be working and used as is to connect RuuviTags to Home Assistant.

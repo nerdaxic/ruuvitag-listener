@@ -1,67 +1,77 @@
 #!/usr/bin/python3
 # coding=UTF-8
-
 from ruuvitag_sensor.ruuvi import RuuviTagSensor, RunFlag
 import json
 import datetime
 import argparse
 import os, sys
 
-# Load list of sensors from json file
-with open(os.path.dirname(sys.argv[0])+'/sensor_list.json') as f:
+# Make the paths work, not if code is run from crontab or directly from folder
+path = os.path.abspath(os.path.dirname(__file__))
+
+# List of files
+sensor_list_json = path+"/sensor_list.json"
+measurements_json = path+"/measurements.json"
+config_file = path+"/configuration.txt"
+customize_file = path+"/customization.txt"
+
+# Read list of sensors
+with open(sensor_list_json) as f:
     data = f.read()
 sensors = json.loads(data)
 
-# Load previous values to update from file
-logfile = os.path.dirname(sys.argv[0])+'/measurements.json'
-
-with open(logfile) as f:
+# Load previous values from file to update
+with open(measurements_json) as f:
     data = f.read()
 previous_measurements = json.loads(data)
 
-
-# Listen for roughly 60 seconds
+# Listen for RuuviTags for roughly 60 seconds
 counter = 60
 results = {}
-
-#results = previous_measurements
-
 results['measurements'] = []
 results['time'] = []
-sensors_missing = len(sensors)
-
+number_of_sensors = len(sensors)
 
 # RunFlag for stopping execution at desired time
 run_flag = RunFlag()
 
+# Process the sensors when match is found
 def handle_data(found_data):
     global results
-    global sensors_missing
+    global measurements_json
+    global number_of_sensors
+    global previous_measurements
+    global counter
 
-    # New measurements I haven't already heard in this session
+    # Ooh, a new measurement I haven't already heard in this session!
     if found_data[0] not in str(results['measurements']):
-        print("FOUND:       "+str(round(found_data[1]["temperature"],1))+u' °C '+sensors[found_data[0]]+" sensor ("+found_data[0]+")")
+        print("FOUND:       "+str(round(found_data[1]["temperature"],1))+' C '+sensors[found_data[0]]+" sensor ("+found_data[0]+")")
 
         # No need to recycle old data, remove found sensor from list of previous measurements
         for found_sensor in previous_measurements["measurements"]:
             if found_sensor["mac"] == found_data[0]:
                 previous_measurements["measurements"].remove(found_sensor)
 
-        sensors_missing = sensors_missing - 1
+        # One more sensor found, aka one less missing
+        number_of_sensors = number_of_sensors - 1
+
+        # Append measurement data to be written into the json file
         results['measurements'].append({
             'mac': found_data[0],
             'time': str(datetime.datetime.now()),
         'data': found_data[1],
     })
 
-    global counter
     counter = counter - 1
-    if counter == 0 or sensors_missing == 0:
+
+    # If time is up or all the sensors have been found
+    if counter == 0 or number_of_sensors == 0:
+        # Stopth
         run_flag.running = False
 
         # Add missing sensor's previous value back to measurement file
         # Flat line/ previous known value is better than Home Assistant reading 0 as value because data is missing.
-        if sensors_missing > 0:
+        if number_of_sensors > 0:
             for previous_measurement in previous_measurements["measurements"]:
                 results['measurements'].append(previous_measurement)
                 print("MISSING:     "+sensors[previous_measurement["mac"]]+ " sensor ("+previous_measurement["mac"]+")")
@@ -69,22 +79,20 @@ def handle_data(found_data):
         else:
             print("All sensors found.")
 
-        # Save the measurement fiel
-        with open(logfile, 'w') as outfile:
+        # Save the measurement file
+        with open(measurements_json, 'w') as outfile:
             json.dump(results, outfile)
-            print("FINISHED:    Measurements saved to "+logfile)
+            print("FINISHED:    Measurements saved to "+measurements_json)
 
+# Check if user wants configs instead of data
 parser = argparse.ArgumentParser()
 parser.add_argument("-c", "--config", action='store_true', help="Write configuration file")
 parser.add_argument("-ab", "--absolute", action='store_true', help="Add absolute humidity sensors to config file")
 parser.add_argument("-av", "--average", action='store_true', help="Add average temperature and humidity sensors to config file")
 args = parser.parse_args()
 
-# Wether to generate config or measurements
+# Definitely configs wanted
 if args.config:
-    config_file = os.path.dirname(sys.argv[0])+"/configuration.txt"
-    customize_file = os.path.dirname(sys.argv[0])+"/customization.txt"
-
     with open(config_file, 'w') as outfile:
         outfile.write("# Do not add the top-most line if you have 'sensor:'' already defined in the configuration.yaml\n\n")  
         outfile.write("sensor:\n")
@@ -137,8 +145,8 @@ if args.config:
                 customfile.write("  icon: mdi:battery-90-bluetooth\n")
                 customfile.write("  device_class: voltage\n")
 
-
                 # Absolute humidity, good estimate from  negative 50 to plus 100 °C
+                # Read more page 12: https://www.hatchability.com/Vaisala.pdf
                 if args.absolute:
                     entity = sensor_name.lower().replace(" ", "_")
                     outfile.write("  - platform: template\n")
@@ -150,11 +158,13 @@ if args.config:
                     outfile.write("        icon_template: 'mdi:water-percent'\n")
                     outfile.write("        unit_of_measurement: 'g/m³'\n\n")
 
+            # Does user want the average sensors
             if args.average:
 
                 temperature_template = ""
                 humidity_template = ""
 
+                # Loop through the sensors to add the values together
                 for sensor_mac in sensors:
                     sensor_name = sensors[sensor_mac]
                     entity = sensor_name.lower().replace(" ", "_")
@@ -171,7 +181,8 @@ if args.config:
                 outfile.write("    sensors:\n")
                 outfile.write("      average_temperature:\n")
                 outfile.write("        friendly_name: 'Average indoor temperature'\n")
-                outfile.write("        value_template: \"{{ (("+temperature_template+") / "+str(sensors_missing)+" ) | round(2) }}\"\n")
+                # Take an average by deviding the sum with the number of sensors
+                outfile.write("        value_template: \"{{ (("+temperature_template+") / "+str(number_of_sensors)+" ) | round(2) }}\"\n")
                 outfile.write("        device_class: temperature\n")
                 outfile.write("        icon_template: mdi:thermometer\n")
                 outfile.write("        unit_of_measurement: '°C'\n\n")
@@ -180,16 +191,18 @@ if args.config:
                 outfile.write("    sensors:\n")
                 outfile.write("      average_humidity:\n")
                 outfile.write("        friendly_name: 'Average indoor humidity'\n")
-                outfile.write("        value_template: \"{{ (("+humidity_template+") / "+str(sensors_missing)+" ) | round(2) }}\"\n")
+                # Take an average by deviding the sum with the number of sensors
+                outfile.write("        value_template: \"{{ (("+humidity_template+") / "+str(number_of_sensors)+" ) | round(2) }}\"\n")
                 outfile.write("        device_class: humidity\n")
                 outfile.write("        icon_template: 'mdi:water-percent'\n")
                 outfile.write("        unit_of_measurement: '% (RH)'\n\n")
 
-    print("FINISHED: Configuraion of "+str(sensors_missing)+" Ruuvi-tags ("+str(sensors_missing*4) + " Home Assistant sensors).")
+    print("FINISHED: Configuraion of "+str(number_of_sensors)+" Ruuvi-tags ("+str(number_of_sensors*4) + " Home Assistant sensors).")
     print("Please copy entries to configuration.yaml customizations to customize.yaml and restart Home Assistant.")
     print("CONFIGURATION: "+ config_file)
     print("CUSTOMIZATION: "+ customize_file)
 
+# Actually measurement data wanted
 else:
     print("Started listening...")
     RuuviTagSensor.get_datas(handle_data, sensors.keys(), run_flag)

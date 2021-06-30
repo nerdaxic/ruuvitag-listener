@@ -74,10 +74,12 @@ crontab -e
 
 ### 6. Generate the config for Home Assistant:
 Each RuuviTag you have will show up as 4 sensors in Home Assistant. Adding these manually is a piece of turd work so this will generate the configs for you automatically.
-- Temperature
-- Humidity
-- Air pressure
-- RuuviTag's battery
+- Temperature [°C]
+- Humidity [% (RH)]
+- Air pressure [hPa]
+- RuuviTag's battery [V]
+- (Optional) Average temperature from multiple sensors [°C]
+- (Optional) Absolute humidity [g/m³]
 
 **Generate config files**
 ```bash
@@ -87,12 +89,12 @@ python /home/pi/docker/hass/custom_components/ruuvitag-listener/measure.py --con
 #### Additional flags:
 **Add absolute humidity** sensors to config file. These are calculated from relative humidity and temperature.
 ```bash
-measure.py --absolute
+measure.py --config --absolute
 ```
 **Add average temperature and humidity** sensors to config file. Maybe not useful on it's own, but after manual edit can be used for things like "Average indoor temperature" by averaging multiple room's sensor data into one virtual thermometer.
 
 ```bash
-measure.py --average
+measure.py --config --average
 ```
 
 ### 7. Copy the sensor configs
